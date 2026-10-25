@@ -1,0 +1,169 @@
+[
+  {
+    "id": "1488155640969826414",
+    "content": "EURUSD BUY LIMIT\n@ 1.14659\n\nTP : 1.15240\nTP : 1.16392\n\nSL : 1.14077",
+    "expected": [
+      "EURUSD",
+      "long",
+      [
+        "1.14659"
+      ],
+      [
+        "1.15240",
+        "1.16392"
+      ],
+      "1.14077"
+    ]
+  },
+  {
+    "id": "1496121747802558624",
+    "content": "GOLD BUY NOW\n@ 4792\nMORE BUY @ 4782\n\nTP : 4810\nTP : 4825\n\nSL : 4770",
+    "expected": [
+      "GOLD",
+      "long",
+      [
+        "4792",
+        "4782"
+      ],
+      [
+        "4810",
+        "4825"
+      ],
+      "4770"
+    ]
+  },
+  {
+    "id": "1540165093294219386",
+    "content": "GOLD SELL NOW\n@ 4517.5\n\nTP : 4500\nTP : 4470\n\nSL : 4534",
+    "expected": [
+      "GOLD",
+      "short",
+      [
+        "4517.5"
+      ],
+      [
+        "4500",
+        "4470"
+      ],
+      "4534"
+    ]
+  },
+  {
+    "id": "1500789239296692286",
+    "content": "GBPNZD SELL LIMIT\n@ 2.30496\n\nTP : 2.29532\nTp : 2.28347\n\nSL : 2.31272",
+    "expected": [
+      "GBPNZD",
+      "short",
+      [
+        "2.30496"
+      ],
+      [
+        "2.29532",
+        "2.28347"
+      ],
+      "2.31272"
+    ]
+  },
+  {
+    "id": "1547976577793400954",
+    "content": "GOLD BUY NOW\n @ 4378 - 4368\n\nTP : 4390\nTP : 4406\n\nSL : 4358",
+    "expected": [
+      "GOLD",
+      "long",
+      [
+        "4378",
+        "4368"
+      ],
+      [
+        "4390",
+        "4406"
+      ],
+      "4358"
+    ]
+  },
+  {
+    "id": "1534866767959162893",
+    "content": "GOLD BUY NOW\n@ 4268\nMORE BUY @ 4255\n\nTP : 4288\nTP : 4302\nTP : OPEN\n\nSL : 4246",
+    "expected": [
+      "GOLD",
+      "long",
+      [
+        "4268",
+        "4255"
+      ],
+      [
+        "4288",
+        "4302"
+      ],
+      "4246"
+    ]
+  },
+  {
+    "id": "1514623120965763114",
+    "content": "GOLD SELL NOW\n@ 4079\nMORE SELL @ 4088\n\nTP : 4060\nTP : LATER\n\nSL : 4099",
+    "expected": [
+      "GOLD",
+      "short",
+      [
+        "4079",
+        "4088"
+      ],
+      [
+        "4060"
+      ],
+      "4099"
+    ]
+  },
+  {
+    "id": "1488155652437053440",
+    "content": "",
+    "expected": null
+  },
+  {
+    "id": "1505967754467868806",
+    "content": "回复: [GOLD BUY LIMIT @ 4548 MORE BUY @ 4535 TP : 4570 TP : 4600 SL : 4524](https://discord.com/channels/1295108691275813036/1488133240975003761/1505927083170463836)\n160 pip",
+    "expected": null
+  },
+  {
+    "id": "1540168884508688386",
+    "content": "回复: [GOLD SELL NOW @ 4517.5 TP : 4500 TP : 4470 SL : 4534](https://discord.com/channels/1295108691275813036/1488133240975003761/1540165093294219386)\nAdd 1 more Sell limit @ 4530\n\nSL set @ 4538",
+    "expected": null
+  },
+  {
+    "id": "1508421235237851197",
+    "content": "GOLD SELL NOW \n @ 4572\nMORE SELL @ 4580\n\nTP : 100/200 (PIPS)\n\nSL : 4585",
+    "expected": null
+  },
+  {
+    "id": "1509541705941258281",
+    "content": "GOLD SELL NOW\n@ 4430\nMORE SELL @ 4440\n\n\nSL : 4445",
+    "expected": null
+  },
+  {
+    "id": "1547958955806953566",
+    "content": "GOLD BUY NOW\n @ 4382 - 4375\n\nTP : 4392\nTP : 4406\n\nSL : LATER",
+    "expected": null
+  },
+  {
+    "id": "1547226358143254654",
+    "content": "GOLD BUY LIMIT\n @ 4386\nMORE BUY @ 4376\n\nTP : 4302\nTP : 4420\nTP : Open\n\nSL : 4366",
+    "expected": null,
+    "error": "解析价格异常"
+  },
+  {
+    "id": "1544688531702681611",
+    "content": "GOLD SELL NOW\n@ 4328\nMORE BUY @ 4318\n\nTP : 4338\nTP : 4350\n\nSL : 4308",
+    "expected": null,
+    "error": "解析价格异常"
+  },
+  {
+    "id": "1553033663522807839",
+    "content": "GOLD BUY ZONE but we will see Monday I’m not taking any entry today already made more then enough pips this week.",
+    "expected": null
+  },
+  {
+    "id": "1488172427514085397",
+    "content": "GOLD BUY NOW",
+    "expected": null
+  }
+]
