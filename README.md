@@ -27,9 +27,14 @@ python listener.py
 | --- | --- |
 | `config/app.py` | HTTP 代理、数据库路径、日志级别和滚动策略 |
 | `config/credentials.py` | Discord、飞书、Bitget 凭据及 Bitget 模拟交易标志，不提交仓库 |
+| `config/notifications.py` | Discord 频道与飞书群 chat_id 映射 |
 | `config/trading.py` | 交易开关、品种别名、频道仓位和 CFD 市价阈值 |
 
 `HTTP_PROXY` 用于 Discord 和 Bitget REST 请求，飞书 SDK 使用自身网络连接。`TRADING_ENABLED=False` 时确认按钮不会下单，信号保持待确认。`BITGET_DEMO` 决定 Bitget 请求是否带模拟交易标志。
+
+群消息转发：将现有企业应用机器人加入 4 个飞书群，在 `config/notifications.py` 的 `CHANNEL_FEISHU_CHATS` 填写各频道对应的群 `chat_id`（`oc_` 开头），留空则不转发。沿用原 App ID、App Secret 和发送消息权限，发布权限配置后重启程序。可通过飞书 API 调试台的“获取群列表”接口查询机器人所在群的 chat_id。消息正文按 Discord 原样转发，Embed 和附件保留为文字或链接。
+
+转发成功后，SQLite 的 `forwarded_messages` 保存 Discord 消息链接和飞书消息 ID 的对应关系。回复消息优先发送为对应飞书消息的回复；找不到原消息映射时作为普通消息发送。回复自身也保存映射，支持继续回复。转发失败记录日志，不自动重试；转发与个人交易确认卡片独立。发送成功后若本地保存失败，仍可能发生重复转发。
 
 日志输出到终端和 `logs/listener.log`。`LOG_LEVEL` 控制级别；`LOG_ROLLING_MODE` 为 `time` 时按时间滚动，为 `size` 时按 `LOG_MAX_BYTES` 滚动；`LOG_BACKUP_COUNT` 控制备份数量。时间滚动使用 UTC。数据库和日志目录自动创建。
 

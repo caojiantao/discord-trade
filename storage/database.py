@@ -34,6 +34,15 @@ class Database:
                 -- 按原消息链接查找后续回复，供消息关联页面使用。
                 CREATE INDEX IF NOT EXISTS idx_messages_reply
                     ON discord_messages(reply_to_url);
+                -- 群转发记录；与个人交易确认卡片的消息 ID 独立。
+                CREATE TABLE IF NOT EXISTS forwarded_messages (
+                    message_id TEXT NOT NULL,           -- Discord 原消息 ID
+                    message_url TEXT NOT NULL,          -- 按回复链接定位原消息
+                    chat_id TEXT NOT NULL,              -- 飞书目标群 ID
+                    feishu_message_id TEXT NOT NULL,    -- 飞书消息 ID，可用于回复
+                    created_at TEXT NOT NULL,           -- 转发完成时间
+                    PRIMARY KEY (message_url, chat_id)
+                );
                 -- 解析后的交易信号及确认状态；一条 Discord 消息最多生成一个信号。
                 CREATE TABLE IF NOT EXISTS trade_signals (
                     -- 直接用原消息 ID 标识信号，关联关系由业务流程维护。
@@ -77,6 +86,21 @@ class Database:
                   json.dumps(message.attachments, ensure_ascii=False), message.reply_to_url,
                   message.sent_at.isoformat(), message.received_at.isoformat()))
             return cursor.rowcount == 1
+
+    def get_forwarded_message(self, message_url: str, chat_id: str) -> str | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT feishu_message_id FROM forwarded_messages WHERE message_url = ? AND chat_id = ?",
+                (message_url, chat_id),
+            ).fetchone()
+            return row[0] if row else None
+
+    def save_forwarded_message(self, message_id: str, message_url: str, chat_id: str, feishu_id: str):
+        with self._connect() as connection:
+            connection.execute(
+                "INSERT INTO forwarded_messages VALUES (?, ?, ?, ?, ?)",
+                (message_id, message_url, chat_id, feishu_id, self._now()),
+            )
 
     def save_signal(self, message_id: str, signal: TradeSignal) -> str | None:
         """一条消息只创建一个待确认信号；重复解析返回 None。"""

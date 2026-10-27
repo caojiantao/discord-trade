@@ -17,6 +17,8 @@ from parsers.implementations.channel_1464406516282167448 import Channel146440651
 from config import app, credentials
 from logging_setup import configure_logging
 from notifications.feishu import FeishuNotifier
+from notifications.forwarding import forward_message
+from config.notifications import CHANNEL_FEISHU_CHATS
 from notifications.confirmation import build_signal_card, run_confirmation_listener
 from storage.database import Database
 from storage.models import DiscordMessage
@@ -67,6 +69,15 @@ async def on_message(message):
     )
     logging.info("discord_message_save message=%s", stored_message)
     database.save_message(stored_message)
+
+    # 配置了群机器人就转发所有消息；转发失败不影响后续信号解析。
+    chat_id = CHANNEL_FEISHU_CHATS.get(message.channel.id)
+    if chat_id:
+        try:
+            await asyncio.to_thread(forward_message, stored_message, chat_id, feishu, database)
+        except Exception:
+            logging.exception("feishu_forward_failed channel_id=%s message_id=%s", message.channel.id, message.id)
+
 
 
     # 所有消息都入库，只有已注册频道的完整信号才发送确认卡片。
