@@ -9,12 +9,17 @@ from concurrent.futures import ThreadPoolExecutor
 import lark_oapi as lark
 from lark_oapi.event.callback.model.p2_card_action_trigger import P2CardActionTriggerResponse
 
+from config.notifications import CHANNEL_FEISHU_CHATS
 from storage.database import Database
 
 
-def build_signal_card(message_id: str, signal: dict, status: str = "pending") -> dict:
+def build_signal_card(message_id: str, signal: dict, status: str = "pending", *,
+                      channel_id: str | int | None = None) -> dict:
     labels = {"pending": "待确认", "ignored": "已忽略", "executing": "执行中",
               "failed": "执行失败", "succeeded": "执行成功", "uncertain": "结果待确认"}
+    # 首次发送和回调更新都按来源频道读取名称，避免更新卡片后丢失频道名。
+    channel = CHANNEL_FEISHU_CHATS.get(int(channel_id), {}) if str(channel_id).isdigit() else {}
+    title = " · ".join(filter(None, ["交易信号", channel.get("name"), labels[status]]))
     time = datetime.fromisoformat(signal["signal_time"]).astimezone(ZoneInfo("Asia/Shanghai"))
     elements = [{"tag": "div", "text": {"tag": "lark_md", "content":
         f"**品种**：{signal['symbol']}\n"
@@ -31,7 +36,7 @@ def build_signal_card(message_id: str, signal: dict, status: str = "pending") ->
             for action, label, style in [("confirm", "确认开仓", "primary"), ("ignore", "忽略", "default")]
         ]})
     return {"config": {"wide_screen_mode": True, "update_multi": True},
-            "header": {"title": {"tag": "plain_text", "content": f"交易信号 · {labels[status]}"},
+            "header": {"title": {"tag": "plain_text", "content": title},
                        "template": "blue" if status == "pending" else "grey"},
             "elements": elements}
 
@@ -87,7 +92,8 @@ class ConfirmationHandler:
             return P2CardActionTriggerResponse({
                 "toast": {"type": "info", "content": "信号已处理"},
                 "card": {"type": "raw", "data": build_signal_card(
-                    message_id, json.loads(row["signal_json"]), row["status"])},
+                    message_id, json.loads(row["signal_json"]), row["status"],
+                    channel_id=row["channel_id"])},
             })
         except Exception:
             logging.exception("feishu_card_action_failed")
@@ -99,7 +105,8 @@ class ConfirmationHandler:
         row = self.database.get_signal(message_id)
         if not row["feishu_message_id"]:
             return
-        card = build_signal_card(message_id, json.loads(row["signal_json"]), row["status"])
+        card = build_signal_card(message_id, json.loads(row["signal_json"]), row["status"],
+                                 channel_id=row["channel_id"])
         if row["result_json"]:
             card["elements"].append({"tag": "div", "text": {"tag": "plain_text",
                                      "content": f"执行结果：{row['result_json']}"}})

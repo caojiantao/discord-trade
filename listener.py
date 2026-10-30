@@ -71,7 +71,8 @@ async def on_message(message):
     database.save_message(stored_message)
 
     # 配置了群机器人就转发所有消息；转发失败不影响后续信号解析。
-    chat_id = CHANNEL_FEISHU_CHATS.get(message.channel.id)
+    channel = CHANNEL_FEISHU_CHATS.get(message.channel.id, {})
+    chat_id = channel.get("chat_id")
     if chat_id:
         try:
             await asyncio.to_thread(forward_message, stored_message, chat_id, feishu, database)
@@ -95,7 +96,8 @@ async def on_message(message):
         message_id = database.save_signal(str(message.id), signal)
         if message_id is None:
             return
-        card = build_signal_card(message_id, json.loads(json.dumps(asdict(signal), default=str)))
+        card = build_signal_card(message_id, json.loads(json.dumps(asdict(signal), default=str)),
+                                 channel_id=message.channel.id)
         feishu_message_id = await asyncio.to_thread(feishu.send_card, credentials.FEISHU_RECEIVE_ID, card)
         database.set_feishu_message_id(message_id, feishu_message_id)
     except Exception:

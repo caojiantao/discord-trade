@@ -12,6 +12,13 @@ from storage.models import DiscordMessage
 
 
 class ForwardingTest(unittest.TestCase):
+    def test_role_mentions_removed_from_forwarded_text(self):
+        message = DiscordMessage("1", "url", "2", "3", "作者",
+                                 "开仓 <@&1553355670802403358>\n<@&123>注意风险",
+                                 [], [], None, datetime.now(timezone.utc))
+        self.assertEqual(format_message(message), "开仓 \n注意风险")
+        self.assertIn("<@&1553355670802403358>", message.content)
+
     def test_translation_ignored_and_embed_images_detected(self):
         message = DiscordMessage("1", "url", "2", "3", "Josh", "original text",
                                  [{"description": "翻译内容", "image": {"url": "https://example.com/chart.png"}},
@@ -55,7 +62,7 @@ class ForwardingTest(unittest.TestCase):
                 body = notifier._client.im.v1.message.create.call_args.args[0].request_body
                 self.assertEqual(body.msg_type, "post")
                 self.assertEqual(json.loads(body.content), {"zh_cn": {"content": [
-                    [{"tag": "text", "text": message.content}],
+                    [{"tag": "text", "text": message.content.replace("<@&1553355683657683008>", "")}],
                     [{"tag": "img", "image_key": "img_test_shuqin"}],
                 ]}})
                 self.assertEqual(db.get_forwarded_message(message.message_url, "oc_group"), "om_shuqin")

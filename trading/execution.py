@@ -26,7 +26,7 @@ def build_order_plan(row: dict, channel_config: dict, mapping: dict, client):
     if not settings:
         raise ValueError(f"频道未配置交易参数：{channel_id}")
     if settings["executor"] == "futures":
-        return FuturesExecutor(mapping, Decimal(settings["notional_usdt"])).build_plan(signal)
+        return FuturesExecutor(mapping, Decimal(settings["max_loss_usdt"])).build_plan(signal)
     if settings["executor"] == "cfd":
         def current_price(symbol):
             tickers = client.get_cfd_ticker(symbol).get("data") or []

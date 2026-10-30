@@ -1,6 +1,7 @@
 """Discord 消息转发及飞书回复关联。"""
 
 import logging
+import re
 from urllib.parse import urlsplit
 
 from storage.models import DiscordMessage
@@ -35,7 +36,8 @@ def format_message(message: DiscordMessage) -> str:
                 lines.append(embed[key]["url"])
     lines.extend(item["url"] for item in message.attachments
                  if item.get("url") and not is_image(item))
-    return "\n".join(lines)
+    # Discord 角色艾特在飞书没有对应对象，转发时移除，数据库仍保存原文。
+    return re.sub(r"<@&\d+>", "", "\n".join(lines))
 
 
 def forward_message(message, chat_id, notifier, database):

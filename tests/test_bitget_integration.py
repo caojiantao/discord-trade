@@ -32,8 +32,8 @@ class BitgetIntegrationTest(unittest.TestCase):
             source_id="https://discord.com/channels/1295108691275813036/1464406516282167448/1561053322620829881",
         )
         self.assertIsNotNone(signal)
-        # 这条测试信号固定使用 100 USDT 名义仓位。
-        plan = FuturesExecutor(trading_config.TRADE_SYMBOL_MAPPING, Decimal("100")).build_plan(signal)
+        # 止损预算 5.5 USDT，价差 5.5，对应 1 SOL（100 USDT 名义仓位）。
+        plan = FuturesExecutor(trading_config.TRADE_SYMBOL_MAPPING, Decimal("5.5")).build_plan(signal)
         order = plan.orders[0]
         client = BitgetClient(
             credentials.BITGET_API_KEY,

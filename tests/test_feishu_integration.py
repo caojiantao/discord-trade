@@ -48,7 +48,7 @@ class FeishuIntegrationTest(unittest.TestCase):
             sent_at=datetime.fromisoformat("2026-10-27T02:00:46.303000+00:00"),
             received_at=datetime.fromisoformat("2026-10-27T02:00:46.635808+00:00"),
         )
-        chat_id = CHANNEL_FEISHU_CHATS.get(int(message.channel_id))
+        chat_id = CHANNEL_FEISHU_CHATS.get(int(message.channel_id), {}).get("chat_id")
         self.assertTrue(chat_id, "请先配置黄金频道对应的 CHANNEL_FEISHU_CHATS")
         notifier = FeishuNotifier(credentials.FEISHU_APP_ID, credentials.FEISHU_APP_SECRET,
                                   proxy=app.HTTP_PROXY)
@@ -87,7 +87,8 @@ class FeishuIntegrationTest(unittest.TestCase):
         self.assertIsNotNone(signal)
         self.assertEqual(database.save_signal(message_id, signal), message_id)
         row = database.get_signal(message_id)
-        card = build_signal_card(message_id, json.loads(row["signal_json"]))
+        card = build_signal_card(message_id, json.loads(row["signal_json"]),
+                                 channel_id=row["channel_id"])
         card["header"]["title"]["content"] = "模拟信号 · 卡片交互测试（不下单）"
         feishu_message_id = FeishuNotifier(credentials.FEISHU_APP_ID, credentials.FEISHU_APP_SECRET).send_card(
             credentials.FEISHU_RECEIVE_ID, card,
@@ -112,7 +113,8 @@ class FeishuIntegrationTest(unittest.TestCase):
         self.assertIsNotNone(signal)
         database.save_signal(message_id, signal)
         row = database.get_signal(message_id)
-        card = build_signal_card(message_id, json.loads(row["signal_json"]))
+        card = build_signal_card(message_id, json.loads(row["signal_json"]),
+                                 channel_id=row["channel_id"])
         card["header"]["title"]["content"] = "SOL 实盘限价挂单 · 待确认"
         card["elements"].insert(0, {"tag": "div", "text": {"tag": "plain_text",
             "content": "确认后真实下单：SOLUSDT，100 USDT 名义仓位，数量 1 SOL，限价 100；TP 105.5，SL 94.5。"}})
@@ -140,7 +142,8 @@ class FeishuIntegrationTest(unittest.TestCase):
         self.assertIsNotNone(signal)
         database.save_signal(message_id, signal)
         row = database.get_signal(message_id)
-        card = build_signal_card(message_id, json.loads(row["signal_json"]))
+        card = build_signal_card(message_id, json.loads(row["signal_json"]),
+                                 channel_id=row["channel_id"])
         card["header"]["title"]["content"] = "黄金 CFD 实盘做空 · 待确认"
         from config import trading
         settings = trading.CHANNEL_TRADING_CONFIG[1488133240975003761]

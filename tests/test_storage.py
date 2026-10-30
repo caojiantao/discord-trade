@@ -1,6 +1,7 @@
 import json
 import tempfile
 import unittest
+from dataclasses import replace
 from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -42,7 +43,7 @@ class DatabaseTest(unittest.TestCase):
         self.assertEqual(replies[0]["content"], "原始正文\n下一行")
         self.assertEqual(json.loads(replies[0]["embeds_json"])[0]["description"], "嵌入正文")
 
-    def test_signal_persistence_and_deduplication(self):
+    def test_signal_persistence_and_message_idempotency(self):
         signal_id, signal = self.save_signal()
         self.assertEqual(signal_id, "1")
         self.assertIsNone(self.db.save_signal("1", signal))
@@ -52,6 +53,16 @@ class DatabaseTest(unittest.TestCase):
         data = json.loads(row["signal_json"])
         self.assertEqual(data["entry_prices"], ["4538"])
         self.assertEqual(data["direction"], "long")
+
+    def test_same_signal_from_different_message_is_saved(self):
+        _, signal = self.save_signal()
+        self.save_message("2")
+        duplicate = replace(signal, source_id="https://discord.com/channels/1/2/2")
+        self.assertEqual(self.db.save_signal("2", duplicate), "2")
+        self.assertEqual(self.db.get_signal("2")["status"], "pending")
+        with self.db._connect() as connection:
+            self.assertEqual(connection.execute("SELECT COUNT(*) FROM discord_messages").fetchone()[0], 2)
+            self.assertEqual(connection.execute("SELECT COUNT(*) FROM trade_signals").fetchone()[0], 2)
 
     def test_confirm_once_and_recover_after_restart(self):
         signal_id, _ = self.save_signal()

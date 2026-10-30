@@ -9,10 +9,10 @@ TRADE_SYMBOL_MAPPING = {
 }
 
 CHANNEL_TRADING_CONFIG = {
-    # 专用于飞书 SOL 实盘测试卡片，保持 100 USDT，不影响正式频道仓位。
-    "test-sol": {"executor": "futures", "notional_usdt": "100"},
-    1295531142912413852: {"executor": "futures", "notional_usdt": "1000"},
-    1386949813743915029: {"executor": "futures", "notional_usdt": "1000"},
-    1464406516282167448: {"executor": "futures", "notional_usdt": "500"},
+    # 专用于飞书 SOL 实盘测试卡片，止损预算 5.5 USDT（对应 100 USDT 名义仓位），不影响正式频道仓位。
+    "test-sol": {"executor": "futures", "max_loss_usdt": "5.5"},
+    1295531142912413852: {"executor": "futures", "max_loss_usdt": "20"},
+    1386949813743915029: {"executor": "futures", "max_loss_usdt": "20"},
+    1464406516282167448: {"executor": "futures", "max_loss_usdt": "20"},
     1488133240975003761: {"executor": "cfd", "lots": "0.01", "threshold": "3"},
 }

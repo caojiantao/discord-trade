@@ -16,13 +16,31 @@ class TradingPlanTest(unittest.TestCase):
         return TradeSignal(self.time, symbol, (Decimal("80000"), Decimal("80500")), direction,
                             (Decimal("82000"), Decimal("84000")), Decimal("79000"), "source")
 
-    def test_futures_splits_fixed_notional_into_limit_orders(self):
-        plan = FuturesExecutor(self.mapping, Decimal("1000")).build_plan(self.signal("比特币"))
+    def test_futures_splits_loss_budget_into_limit_orders(self):
+        plan = FuturesExecutor(self.mapping, Decimal("30")).build_plan(self.signal("比特币"))
         self.assertEqual(plan.market, "futures")
         self.assertEqual(plan.orders[0].symbol, "BTCUSDT")
         self.assertEqual([o.order_type for o in plan.orders], ["limit", "limit"])
-        self.assertEqual([o.quantity for o in plan.orders], [Decimal("0.00625"), Decimal("0.006211180124223602484472049689")])
+        self.assertEqual([o.quantity for o in plan.orders], [Decimal("0.012"), Decimal("0.012")])
+        self.assertEqual(sum(o.quantity * abs(o.price - o.stop_loss) for o in plan.orders), Decimal("30"))
         self.assertEqual(plan.orders[0].take_profit, Decimal("82000"))
+
+    def test_short_loss_budget_and_invalid_stop(self):
+        signal = TradeSignal(self.time, "SOL", (Decimal("100"), Decimal("102")), Direction.SHORT,
+                             (Decimal("90"),), Decimal("110"), "source")
+        plan = FuturesExecutor(self.mapping, Decimal("20")).build_plan(signal)
+        self.assertEqual(plan.orders[0].quantity, Decimal("20") / Decimal("18"))
+        self.assertEqual(plan.orders[0].quantity, plan.orders[1].quantity)
+        with self.assertRaises(ValueError):
+            FuturesExecutor(self.mapping, Decimal("20")).build_plan(self.signal("BTC", Direction.SHORT))
+
+    def test_loss_is_allocated_by_entry_distance(self):
+        signal = TradeSignal(self.time, "SOL", (Decimal("100"), Decimal("90")), Direction.LONG,
+                             (Decimal("120"),), Decimal("70"), "source")
+        plan = FuturesExecutor(self.mapping, Decimal("50")).build_plan(signal)
+        self.assertEqual([o.quantity for o in plan.orders], [Decimal("1"), Decimal("1")])
+        self.assertEqual([o.quantity * abs(o.price - o.stop_loss) for o in plan.orders],
+                         [Decimal("30"), Decimal("20")])
 
     def test_symbol_is_normalized_before_mapping(self):
         plan = FuturesExecutor(self.mapping, Decimal("1000")).build_plan(self.signal("btc"))

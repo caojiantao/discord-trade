@@ -27,12 +27,12 @@ python listener.py
 | --- | --- |
 | `config/app.py` | HTTP 代理、数据库路径、日志级别和滚动策略 |
 | `config/credentials.py` | Discord、飞书、Bitget 凭据及 Bitget 模拟交易标志，不提交仓库 |
-| `config/notifications.py` | Discord 频道与飞书群 chat_id 映射 |
+| `config/notifications.py` | Discord 频道名称与飞书群 chat_id 映射 |
 | `config/trading.py` | 交易开关、品种别名、频道仓位和 CFD 市价阈值 |
 
 `HTTP_PROXY` 用于 Discord 和 Bitget REST 请求，飞书 SDK 使用自身网络连接。`TRADING_ENABLED=False` 时确认按钮不会下单，信号保持待确认。`BITGET_DEMO` 决定 Bitget 请求是否带模拟交易标志。
 
-群消息转发：将现有企业应用机器人加入 4 个飞书群，在 `config/notifications.py` 的 `CHANNEL_FEISHU_CHATS` 填写各频道对应的群 `chat_id`（`oc_` 开头），留空则不转发。沿用原 App ID、App Secret 和发送消息权限，发布权限配置后重启程序。可通过飞书 API 调试台的“获取群列表”接口查询机器人所在群的 chat_id。消息正文按 Discord 原样转发，Embed 和附件保留为文字或链接。
+群消息转发：将现有企业应用机器人加入 4 个飞书群，在 `config/notifications.py` 的 `CHANNEL_FEISHU_CHATS` 按频道 ID 配置 `{"name": "黄金帝国", "chat_id": "oc_..."}`；`name` 用于交易信号卡片标题，`chat_id` 为转发群 ID（`oc_` 开头），留空则不转发。沿用原 App ID、App Secret 和发送消息权限，发布权限配置后重启程序。可通过飞书 API 调试台的“获取群列表”接口查询机器人所在群的 chat_id。消息正文按 Discord 原样转发，Embed 和附件保留为文字或链接。
 
 转发成功后，SQLite 的 `forwarded_messages` 保存 Discord 消息链接和飞书消息 ID 的对应关系。回复消息优先发送为对应飞书消息的回复；找不到原消息映射时作为普通消息发送。回复自身也保存映射，支持继续回复。转发失败记录日志，不自动重试；转发与个人交易确认卡片独立。发送成功后若本地保存失败，仍可能发生重复转发。
 
@@ -53,7 +53,7 @@ python listener.py
 - 信号保留原品种名称，交易前转大写并映射别名。价格使用 `Decimal`，JSON 中存字符串，信号时间使用北京时间。
 - 至少有一个数字 TP；忽略 `OPEN`、`LATER`、待定目标。价格顺序校验失败抛出异常，不排序修正。
 - 卡片永久有效；重复确认通过数据库原子状态更新拦截。忽略后不能再确认。
-- 合约使用 Bitget UTA V3：固定名义金额分配到各入场点，统一限价，每单附带 SL 和 TP1。账户需事先设好全仓、双向持仓和杠杆；程序不设置杠杆。
+- 合约使用 Bitget UTA V3：按频道配置 `max_loss_usdt` 止损预算，按入场到止损的距离比例分配风险；各笔数量相同，数量 = 总止损预算 / 所有入场止损距离之和（不含手续费、滑点，实际亏损可能超过预算），统一限价，每单附带 SL 和 TP1。账户需事先设好全仓、双向持仓和杠杆；程序不设置杠杆。
 - CFD 只处理黄金 `XAUUSD.s`：固定手数；确认后查询买卖报价，距离入场价不超过阈值时市价，否则限价。每个入场点独立下单，使用 TP1 全平。当前接普通 CFD 账户，不支持 CFD 带单账户。
 - 成功表示交易所已接单，不表示限价单已成交。多笔请求按顺序提交，发生异常停止；请求发出后异常标记为结果待确认，不自动重试或撤销已成功的订单。
 

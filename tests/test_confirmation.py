@@ -6,9 +6,9 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
-from notifications.confirmation import ConfirmationHandler
+from notifications.confirmation import ConfirmationHandler, build_signal_card
 from parsers.models import Direction, TradeSignal
 from storage.database import Database
 from storage.models import DiscordMessage
@@ -48,7 +48,7 @@ class ConfirmationTest(unittest.TestCase):
         self.handler.enabled = True
         self.handler.bitget = MagicMock()
         self.handler.bitget.place_futures_order.return_value = {"code": "00000", "data": {"orderId": "order1"}}
-        self.handler.channel_config = {"test-sol": {"executor": "futures", "notional_usdt": "100"}}
+        self.handler.channel_config = {"test-sol": {"executor": "futures", "max_loss_usdt": "5.5"}}
         self.handler.workers.shutdown()
         self.handler.workers = MagicMock()
 
@@ -82,3 +82,23 @@ class ConfirmationTest(unittest.TestCase):
         response = self.handler.handle(self.event("ignore", "ou_other"))
         self.assertEqual(response.toast.type, "error")
         self.assertEqual(self.db.get_signal("123")["status"], "pending")
+
+    def test_channel_name_remains_in_initial_and_updated_card(self):
+        self.db.save_message(DiscordMessage(
+            "123", "https://discord.com/channels/1/2/123", "1488133240975003761",
+            "test", "test", "GOLD BUY NOW", [], [], None, datetime.now(timezone.utc)))
+        self.handler.notifier = MagicMock()
+        self.db.set_feishu_message_id("123", "om_test")
+        with patch.dict("notifications.confirmation.CHANNEL_FEISHU_CHATS", {
+            1488133240975003761: {"name": "黄金帝国", "chat_id": ""},
+        }):
+            row = self.db.get_signal("123")
+            card = build_signal_card("123", json.loads(row["signal_json"]),
+                                     channel_id=row["channel_id"])
+            self.assertEqual(card["header"]["title"]["content"], "交易信号 · 黄金帝国 · 待确认")
+            response = self.handler.handle(self.event("ignore"))
+            self.assertEqual(response.card.data["header"]["title"]["content"],
+                             "交易信号 · 黄金帝国 · 已忽略")
+            self.handler._update_card("123")
+            updated = self.handler.notifier.update_card.call_args.args[1]
+            self.assertEqual(updated["header"]["title"]["content"], "交易信号 · 黄金帝国 · 已忽略")
